@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "D:/gita/Gita-app/Gita-app"
+		}
+	],
+	"settings": {
+		"java.compile.nullAnalysis.mode": "disabled"
+	}
+}
