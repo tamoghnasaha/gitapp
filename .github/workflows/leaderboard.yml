@@ -1,0 +1,34 @@
+name: Update Leaderboard
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  update-json:
+    if: startsWith(github.event.issue.title, 'SCORE:')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Parse and Update
+        run: |
+          # Extract data from issue title (e.g., SCORE: Name: 500)
+          SCORE_DATA=$(echo "${{ github.event.issue.title }}" | cut -d':' -f2,3)
+          NAME=$(echo $SCORE_DATA | cut -d':' -f1 | xargs)
+          POINTS=$(echo $SCORE_DATA | cut -d':' -f2 | xargs)
+          
+          # Use 'jq' (pre-installed) to update the JSON
+          jq ". += [{\"username\": \"$NAME\", \"score\": $POINTS}] | sort_by(-.score) | .[0:100]" data/leaderboard.json > temp.json && mv temp.json data/leaderboard.json
+          
+      - name: Commit changes
+        run: |
+          git config --global user.name "GitaBot"
+          git config --global user.email "bot@github.com"
+          git add data/leaderboard.json
+          git commit -m "Update leaderboard for $NAME"
+          git push
+          
+      - name: Close Issue
+        run: gh issue close ${{ github.event.issue.number }} --comment "Score updated!"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
