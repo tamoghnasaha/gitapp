@@ -27,6 +27,7 @@
       background: var(--bg-gradient);
       padding: 20px;
       overflow: hidden;
+      position: relative;
     }
 
     .card {
@@ -36,14 +37,10 @@
       padding: 35px 25px;
       max-width: 480px;
       width: 100%;
-      min-height: 460px;
       text-align: center;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-      position: relative; /* Keeps button strictly inside */
-      overflow: hidden; /* Clips anything trying to overflow */
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      z-index: 1;
+      position: relative;
     }
 
     .icon {
@@ -74,8 +71,8 @@
     .timer-container {
       background: #F1F2F6;
       border-radius: 16px;
-      padding: 14px 20px;
-      margin-bottom: 25px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
       width: 100%;
     }
 
@@ -84,7 +81,7 @@
       color: #8395A7;
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       font-weight: 600;
     }
 
@@ -101,7 +98,7 @@
     }
 
     .number {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: bold;
       color: var(--primary-color);
     }
@@ -113,26 +110,24 @@
     }
 
     .separator {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: bold;
       color: var(--accent-color);
-      margin-top: -12px;
+      margin-top: -10px;
     }
 
-    .btn-container {
-      width: 100%;
-      height: 70px;
-      position: relative;
+    .btn-placeholder {
+      min-height: 60px;
       display: flex;
       justify-content: center;
       align-items: center;
     }
 
     .unlock-btn {
-      padding: 14px 28px;
+      padding: 16px 32px;
       border: none;
       border-radius: 12px;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: bold;
       color: #fff;
       background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
@@ -140,19 +135,18 @@
       box-shadow: 0 8px 15px rgba(108, 92, 231, 0.3);
       white-space: nowrap;
       user-select: none;
-      z-index: 10;
+      z-index: 999;
       transition: none;
     }
 
     .message-box {
       display: none;
-      margin-top: 15px;
-      padding: 25px;
+      margin-top: 20px;
+      padding: 20px;
       border-radius: 16px;
       background: #F8F9FA;
       border: 2px dashed var(--primary-color);
       animation: fadeIn 0.8s ease forwards;
-      width: 100%;
     }
 
     @keyframes fadeIn {
@@ -162,8 +156,14 @@
 
     .message-box h2 {
       color: var(--primary-color);
-      font-size: 28px;
-      margin: 0;
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .message-box h4 {
+      color: #636E72;
+      font-size: 14px;
+      font-weight: 600;
     }
 
     canvas#confetti {
@@ -186,7 +186,7 @@
     <h1>A Secret Message For You</h1>
     <p class="subtitle" id="subtext">Catch the button below to reveal your surprise!</p>
 
-    <!-- Countdown Timer -->
+    <!-- Countdown Timer Container -->
     <div class="timer-container" id="timerContainer">
       <div class="timer-title">Unlocks In</div>
       <div class="countdown">
@@ -207,15 +207,15 @@
       </div>
     </div>
 
-    <div class="btn-container" id="btnContainer">
+    <div class="btn-placeholder" id="btnPlaceholder">
       <button id="revealBtn" class="unlock-btn">
         ✨ Click Me For Surprise ✨
       </button>
     </div>
 
     <div class="message-box" id="messageBox">
-       <h2>🎉 Happy Birthday to you Gautumi! 🥳</h2>
-	  <h4> Give treat after Sravan ends & don't put POSH on me </h4>
+      <h2>🎉 Happy Birthday to you Gautumi! 🥳</h2>
+      <h4>Give treat after Sravan ends & don't put POSH on me</h4>
     </div>
   </div>
 
@@ -225,7 +225,6 @@
 
     const card = document.getElementById('card');
     const revealBtn = document.getElementById('revealBtn');
-    const btnContainer = document.getElementById('btnContainer');
     const timerContainer = document.getElementById('timerContainer');
     const messageBox = document.getElementById('messageBox');
     const icon = document.getElementById('icon');
@@ -237,7 +236,6 @@
 
     let isUnlocked = false;
 
-    // Countdown Timer Logic
     function updateTimer() {
       const now = new Date().getTime();
       const difference = targetDate - now;
@@ -249,6 +247,8 @@
         secondsEl.innerText = "00";
 
         revealBtn.style.position = 'static';
+        revealBtn.style.left = 'auto';
+        revealBtn.style.top = 'auto';
         subtext.innerText = "You caught it! Click below to open your message.";
         return;
       }
@@ -265,29 +265,38 @@
     const timerInterval = setInterval(updateTimer, 1000);
     updateTimer();
 
-    // Dodging Movement strictly confined inside the white card
-    function moveButtonInsideCard() {
+    function teleportButton() {
       if (isUnlocked) return;
 
       const cardRect = card.getBoundingClientRect();
-      const btnRect = revealBtn.getBoundingClientRect();
+      const btnWidth = revealBtn.offsetWidth || 200;
+      const btnHeight = revealBtn.offsetHeight || 50;
 
-      const padding = 15; // Inset padding inside card boundaries
-      const minX = padding;
-      const maxX = cardRect.width - btnRect.width - padding;
+      // Expand card boundaries by 20% on each side
+      const marginX = cardRect.width * 0.20;
+      const marginY = cardRect.height * 0.20;
 
-      const minY = padding;
-      const maxY = cardRect.height - btnRect.height - padding;
+      const minX = cardRect.left - marginX;
+      const maxX = cardRect.right + marginX - btnWidth;
 
-      const newX = Math.floor(Math.random() * (maxX - minX + 1)) + minX;
-      const newY = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
+      const minY = cardRect.top - marginY;
+      const maxY = cardRect.bottom + marginY - btnHeight;
 
-      revealBtn.style.position = 'absolute';
+      // Keep within viewport safety limits
+      const safeMinX = Math.max(10, minX);
+      const safeMaxX = Math.min(window.innerWidth - btnWidth - 10, maxX);
+      const safeMinY = Math.max(10, minY);
+      const safeMaxY = Math.min(window.innerHeight - btnHeight - 10, maxY);
+
+      const newX = Math.floor(Math.random() * (safeMaxX - safeMinX + 1)) + safeMinX;
+      const newY = Math.floor(Math.random() * (safeMaxY - safeMinY + 1)) + safeMinY;
+
+      revealBtn.style.position = 'fixed';
       revealBtn.style.left = `${newX}px`;
       revealBtn.style.top = `${newY}px`;
     }
 
-    // Trigger dodging when mouse gets near
+    // Dodges when cursor enters proximity radius
     window.addEventListener('mousemove', (e) => {
       if (isUnlocked) return;
 
@@ -295,26 +304,26 @@
       const distanceX = Math.abs(e.clientX - (btnRect.left + btnRect.width / 2));
       const distanceY = Math.abs(e.clientY - (btnRect.top + btnRect.height / 2));
 
-      if (distanceX < (btnRect.width / 2 + 40) && distanceY < (btnRect.height / 2 + 40)) {
-        moveButtonInsideCard();
+      if (distanceX < (btnRect.width / 2 + 60) && distanceY < (btnRect.height / 2 + 60)) {
+        teleportButton();
       }
     });
 
-    // Touch Handling for mobile
+    // Mobile / Touch Handling
     revealBtn.addEventListener('touchstart', (e) => {
       if (!isUnlocked) {
         e.preventDefault();
-        moveButtonInsideCard();
+        teleportButton();
       }
     });
 
     revealBtn.addEventListener('click', () => {
       if (!isUnlocked) {
-        moveButtonInsideCard();
+        teleportButton();
         return;
       }
 
-      btnContainer.style.display = 'none';
+      revealBtn.style.display = 'none';
       timerContainer.style.display = 'none';
       messageBox.style.display = 'block';
       icon.innerText = "🎂";
@@ -322,7 +331,7 @@
       launchConfetti();
     });
 
-    // Confetti Visual Effect
+    // Confetti Effect
     function launchConfetti() {
       const canvas = document.getElementById('confetti');
       const ctx = canvas.getContext('2d');
