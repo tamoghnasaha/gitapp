@@ -27,25 +27,28 @@
       background: var(--bg-gradient);
       padding: 20px;
       overflow: hidden;
-      position: relative;
     }
 
     .card {
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(10px);
       border-radius: 24px;
-      padding: 40px 30px;
+      padding: 35px 25px;
       max-width: 480px;
       width: 100%;
+      min-height: 460px;
       text-align: center;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-      z-index: 1;
-      position: relative;
+      position: relative; /* Keeps button strictly inside */
+      overflow: hidden; /* Clips anything trying to overflow */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .icon {
-      font-size: 64px;
-      margin-bottom: 15px;
+      font-size: 56px;
+      margin-bottom: 10px;
       display: inline-block;
       animation: pulse 2s infinite ease-in-out;
     }
@@ -57,28 +60,79 @@
 
     h1 {
       color: var(--text-dark);
-      font-size: 26px;
-      margin-bottom: 10px;
+      font-size: 24px;
+      margin-bottom: 8px;
     }
 
     p.subtitle {
       color: #636E72;
-      font-size: 15px;
-      margin-bottom: 25px;
+      font-size: 14px;
+      margin-bottom: 20px;
     }
 
-    .btn-placeholder {
-      min-height: 60px;
+    /* Countdown Display Styles */
+    .timer-container {
+      background: #F1F2F6;
+      border-radius: 16px;
+      padding: 14px 20px;
+      margin-bottom: 25px;
+      width: 100%;
+    }
+
+    .timer-title {
+      font-size: 11px;
+      color: #8395A7;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .countdown {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+
+    .time-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .number {
+      font-size: 22px;
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+
+    .label {
+      font-size: 10px;
+      color: #576574;
+      text-transform: uppercase;
+    }
+
+    .separator {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--accent-color);
+      margin-top: -12px;
+    }
+
+    .btn-container {
+      width: 100%;
+      height: 70px;
+      position: relative;
       display: flex;
       justify-content: center;
       align-items: center;
     }
 
     .unlock-btn {
-      padding: 16px 32px;
+      padding: 14px 28px;
       border: none;
       border-radius: 12px;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: bold;
       color: #fff;
       background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
@@ -86,18 +140,19 @@
       box-shadow: 0 8px 15px rgba(108, 92, 231, 0.3);
       white-space: nowrap;
       user-select: none;
-      z-index: 999;
+      z-index: 10;
       transition: none;
     }
 
     .message-box {
       display: none;
-      margin-top: 25px;
+      margin-top: 15px;
       padding: 25px;
       border-radius: 16px;
       background: #F8F9FA;
       border: 2px dashed var(--primary-color);
       animation: fadeIn 0.8s ease forwards;
+      width: 100%;
     }
 
     @keyframes fadeIn {
@@ -131,14 +186,35 @@
     <h1>A Secret Message For You</h1>
     <p class="subtitle" id="subtext">Catch the button below to reveal your surprise!</p>
 
-    <div class="btn-placeholder" id="btnPlaceholder">
+    <!-- Countdown Timer -->
+    <div class="timer-container" id="timerContainer">
+      <div class="timer-title">Unlocks In</div>
+      <div class="countdown">
+        <div class="time-block">
+          <span class="number" id="hours">00</span>
+          <span class="label">Hours</span>
+        </div>
+        <span class="separator">:</span>
+        <div class="time-block">
+          <span class="number" id="minutes">00</span>
+          <span class="label">Mins</span>
+        </div>
+        <span class="separator">:</span>
+        <div class="time-block">
+          <span class="number" id="seconds">00</span>
+          <span class="label">Secs</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-container" id="btnContainer">
       <button id="revealBtn" class="unlock-btn">
         ✨ Click Me For Surprise ✨
       </button>
     </div>
 
     <div class="message-box" id="messageBox">
-      <h2>🎉 Happy Birthday to you Gautumi! 🥳</h2>
+       <h2>🎉 Happy Birthday to you Gautumi! 🥳</h2>
 	  <h4> Give treat after Sravan ends & don't put POSH on me </h4>
     </div>
   </div>
@@ -149,56 +225,69 @@
 
     const card = document.getElementById('card');
     const revealBtn = document.getElementById('revealBtn');
+    const btnContainer = document.getElementById('btnContainer');
+    const timerContainer = document.getElementById('timerContainer');
     const messageBox = document.getElementById('messageBox');
     const icon = document.getElementById('icon');
     const subtext = document.getElementById('subtext');
 
+    const hoursEl = document.getElementById('hours');
+    const minutesEl = document.getElementById('minutes');
+    const secondsEl = document.getElementById('seconds');
+
     let isUnlocked = false;
 
-    function checkTime() {
+    // Countdown Timer Logic
+    function updateTimer() {
       const now = new Date().getTime();
-      if (now >= targetDate) {
+      const difference = targetDate - now;
+
+      if (difference <= 0) {
         isUnlocked = true;
+        hoursEl.innerText = "00";
+        minutesEl.innerText = "00";
+        secondsEl.innerText = "00";
+
         revealBtn.style.position = 'static';
-        revealBtn.style.left = 'auto';
-        revealBtn.style.top = 'auto';
         subtext.innerText = "You caught it! Click below to open your message.";
+        return;
       }
+
+      const totalHours = Math.floor(difference / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      hoursEl.innerText = totalHours < 10 ? '0' + totalHours : totalHours;
+      minutesEl.innerText = minutes < 10 ? '0' + minutes : minutes;
+      secondsEl.innerText = seconds < 10 ? '0' + seconds : seconds;
     }
 
-    function teleportButton() {
-      checkTime();
+    const timerInterval = setInterval(updateTimer, 1000);
+    updateTimer();
+
+    // Dodging Movement strictly confined inside the white card
+    function moveButtonInsideCard() {
       if (isUnlocked) return;
 
       const cardRect = card.getBoundingClientRect();
-      const btnWidth = revealBtn.offsetWidth || 200;
-      const btnHeight = revealBtn.offsetHeight || 50;
+      const btnRect = revealBtn.getBoundingClientRect();
 
-      // Expand card boundaries by 20% on each side
-      const marginX = cardRect.width * 0.20;
-      const marginY = cardRect.height * 0.20;
+      const padding = 15; // Inset padding inside card boundaries
+      const minX = padding;
+      const maxX = cardRect.width - btnRect.width - padding;
 
-      const minX = cardRect.left - marginX;
-      const maxX = cardRect.right + marginX - btnWidth;
+      const minY = padding;
+      const maxY = cardRect.height - btnRect.height - padding;
 
-      const minY = cardRect.top - marginY;
-      const maxY = cardRect.bottom + marginY - btnHeight;
+      const newX = Math.floor(Math.random() * (maxX - minX + 1)) + minX;
+      const newY = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
 
-      // Keep within viewport safety limits
-      const safeMinX = Math.max(10, minX);
-      const safeMaxX = Math.min(window.innerWidth - btnWidth - 10, maxX);
-      const safeMinY = Math.max(10, minY);
-      const safeMaxY = Math.min(window.innerHeight - btnHeight - 10, maxY);
-
-      const newX = Math.floor(Math.random() * (safeMaxX - safeMinX + 1)) + safeMinX;
-      const newY = Math.floor(Math.random() * (safeMaxY - safeMinY + 1)) + safeMinY;
-
-      revealBtn.style.position = 'fixed';
+      revealBtn.style.position = 'absolute';
       revealBtn.style.left = `${newX}px`;
       revealBtn.style.top = `${newY}px`;
     }
 
-    // Dodges when cursor enters proximity radius
+    // Trigger dodging when mouse gets near
     window.addEventListener('mousemove', (e) => {
       if (isUnlocked) return;
 
@@ -206,34 +295,34 @@
       const distanceX = Math.abs(e.clientX - (btnRect.left + btnRect.width / 2));
       const distanceY = Math.abs(e.clientY - (btnRect.top + btnRect.height / 2));
 
-      if (distanceX < (btnRect.width / 2 + 60) && distanceY < (btnRect.height / 2 + 60)) {
-        teleportButton();
+      if (distanceX < (btnRect.width / 2 + 40) && distanceY < (btnRect.height / 2 + 40)) {
+        moveButtonInsideCard();
       }
     });
 
-    // Mobile / Touch Handling
+    // Touch Handling for mobile
     revealBtn.addEventListener('touchstart', (e) => {
       if (!isUnlocked) {
         e.preventDefault();
-        teleportButton();
+        moveButtonInsideCard();
       }
     });
 
     revealBtn.addEventListener('click', () => {
-      checkTime();
       if (!isUnlocked) {
-        teleportButton();
+        moveButtonInsideCard();
         return;
       }
 
-      revealBtn.style.display = 'none';
+      btnContainer.style.display = 'none';
+      timerContainer.style.display = 'none';
       messageBox.style.display = 'block';
       icon.innerText = "🎂";
       subtext.innerText = "Have a marvelous day!";
       launchConfetti();
     });
 
-    // Confetti Effect
+    // Confetti Visual Effect
     function launchConfetti() {
       const canvas = document.getElementById('confetti');
       const ctx = canvas.getContext('2d');
