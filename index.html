@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A Secret Surprise... 🎁</title>
+  <style>
+    :root {
+      --primary-color: #6C5CE7;
+      --accent-color: #FF7675;
+      --text-dark: #2D3436;
+      --bg-gradient: linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: var(--bg-gradient);
+      padding: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      padding: 40px 30px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      z-index: 1;
+      position: relative;
+    }
+
+    .icon {
+      font-size: 64px;
+      margin-bottom: 15px;
+      display: inline-block;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    h1 {
+      color: var(--text-dark);
+      font-size: 26px;
+      margin-bottom: 10px;
+    }
+
+    p.subtitle {
+      color: #636E72;
+      font-size: 15px;
+      margin-bottom: 25px;
+    }
+
+    .btn-placeholder {
+      min-height: 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .unlock-btn {
+      padding: 16px 32px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+      cursor: pointer;
+      box-shadow: 0 8px 15px rgba(108, 92, 231, 0.3);
+      white-space: nowrap;
+      user-select: none;
+      z-index: 999;
+      transition: none;
+    }
+
+    .message-box {
+      display: none;
+      margin-top: 25px;
+      padding: 25px;
+      border-radius: 16px;
+      background: #F8F9FA;
+      border: 2px dashed var(--primary-color);
+      animation: fadeIn 0.8s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message-box h2 {
+      color: var(--primary-color);
+      font-size: 28px;
+      margin: 0;
+    }
+
+    canvas#confetti {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 99;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="confetti"></canvas>
+
+  <div class="card" id="card">
+    <div class="icon" id="icon">🎁</div>
+    <h1>A Secret Message For You</h1>
+    <p class="subtitle" id="subtext">Catch the button below to reveal your surprise!</p>
+
+    <div class="btn-placeholder" id="btnPlaceholder">
+      <button id="revealBtn" class="unlock-btn">
+        ✨ Click Me For Surprise ✨
+      </button>
+    </div>
+
+    <div class="message-box" id="messageBox">
+      <h2>🎉 Happy Birthday to you! 🥳</h2>
+    </div>
+  </div>
+
+  <script>
+    // Target Unlocking Timestamp: August 11, 2026, 23:59:59.000 (Local Time)
+    const targetDate = new Date("2026-08-11T23:59:59.000").getTime();
+
+    const card = document.getElementById('card');
+    const revealBtn = document.getElementById('revealBtn');
+    const messageBox = document.getElementById('messageBox');
+    const icon = document.getElementById('icon');
+    const subtext = document.getElementById('subtext');
+
+    let isUnlocked = false;
+
+    function checkTime() {
+      const now = new Date().getTime();
+      if (now >= targetDate) {
+        isUnlocked = true;
+        revealBtn.style.position = 'static';
+        revealBtn.style.left = 'auto';
+        revealBtn.style.top = 'auto';
+        subtext.innerText = "You caught it! Click below to open your message.";
+      }
+    }
+
+    function teleportButton() {
+      checkTime();
+      if (isUnlocked) return;
+
+      const cardRect = card.getBoundingClientRect();
+      const btnWidth = revealBtn.offsetWidth || 200;
+      const btnHeight = revealBtn.offsetHeight || 50;
+
+      // Expand card boundaries by 20% on each side
+      const marginX = cardRect.width * 0.20;
+      const marginY = cardRect.height * 0.20;
+
+      const minX = cardRect.left - marginX;
+      const maxX = cardRect.right + marginX - btnWidth;
+
+      const minY = cardRect.top - marginY;
+      const maxY = cardRect.bottom + marginY - btnHeight;
+
+      // Keep within viewport safety limits
+      const safeMinX = Math.max(10, minX);
+      const safeMaxX = Math.min(window.innerWidth - btnWidth - 10, maxX);
+      const safeMinY = Math.max(10, minY);
+      const safeMaxY = Math.min(window.innerHeight - btnHeight - 10, maxY);
+
+      const newX = Math.floor(Math.random() * (safeMaxX - safeMinX + 1)) + safeMinX;
+      const newY = Math.floor(Math.random() * (safeMaxY - safeMinY + 1)) + safeMinY;
+
+      revealBtn.style.position = 'fixed';
+      revealBtn.style.left = `${newX}px`;
+      revealBtn.style.top = `${newY}px`;
+    }
+
+    // Dodges when cursor enters proximity radius
+    window.addEventListener('mousemove', (e) => {
+      if (isUnlocked) return;
+
+      const btnRect = revealBtn.getBoundingClientRect();
+      const distanceX = Math.abs(e.clientX - (btnRect.left + btnRect.width / 2));
+      const distanceY = Math.abs(e.clientY - (btnRect.top + btnRect.height / 2));
+
+      if (distanceX < (btnRect.width / 2 + 60) && distanceY < (btnRect.height / 2 + 60)) {
+        teleportButton();
+      }
+    });
+
+    // Mobile / Touch Handling
+    revealBtn.addEventListener('touchstart', (e) => {
+      if (!isUnlocked) {
+        e.preventDefault();
+        teleportButton();
+      }
+    });
+
+    revealBtn.addEventListener('click', () => {
+      checkTime();
+      if (!isUnlocked) {
+        teleportButton();
+        return;
+      }
+
+      revealBtn.style.display = 'none';
+      messageBox.style.display = 'block';
+      icon.innerText = "🎂";
+      subtext.innerText = "Have a marvelous day!";
+      launchConfetti();
+    });
+
+    // Confetti Effect
+    function launchConfetti() {
+      const canvas = document.getElementById('confetti');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const pieces = [];
+      const colors = ['#6C5CE7', '#FF7675', '#00CEC9', '#FFD32A', '#A29BFE'];
+
+      for (let i = 0; i < 100; i++) {
+        pieces.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          speed: Math.random() * 4 + 2,
+          angle: Math.random() * 360
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        pieces.forEach(p => {
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.angle);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+          ctx.restore();
+
+          p.y += p.speed;
+          p.angle += 0.05;
+
+          if (p.y > canvas.height) p.y = -20;
+        });
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+  </script>
+</body>
+</html>
